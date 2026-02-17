@@ -1,0 +1,18 @@
+{
+  "name": "max_bot",
+  "version": "1.0.0",
+  "description": "MAX Messenger chatbot for 23 February campaign",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node --watch bot.js"
+  },
+  "keywords": ["max", "bot", "messenger"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@maxhub/max-bot-api": "^0.2.2",
+    "dotenv": "^17.3.1"
+  }
+}
