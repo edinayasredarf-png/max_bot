@@ -588,18 +588,24 @@ bot.on('message_created', async (ctx) => {
   const senderId = ctx.message?.sender?.user_id;
   const text = ctx.message?.body?.text;
   
+  console.log('message_created:', { senderId, text: text?.substring(0, 50), ADMIN_ID });
+  console.log('activeManagerChats:', Array.from(activeManagerChats.entries()));
+  
   // Игнорируем команды
   if (text?.startsWith('/')) return;
   
   // Если отправитель — пользователь с активным чатом
   if (activeManagerChats.has(senderId)) {
     const managerId = activeManagerChats.get(senderId);
+    console.log(`Пересылаем сообщение от ${senderId} к менеджеру ${managerId}`);
     
     // Пересылаем сообщение менеджеру
     try {
       await bot.api.sendMessageToUser(managerId,
-        `💬 *Сообщение от пользователя ${senderId}*:\n\n${text}`
+        `💬 *Сообщение от пользователя ${senderId}*:\n\n${text}`,
+        { format: 'markdown' }
       );
+      console.log('Сообщение переслано менеджеру успешно');
     } catch (error) {
       console.error('Ошибка пересылки менеджеру:', error);
     }
@@ -608,18 +614,60 @@ bot.on('message_created', async (ctx) => {
   
   // Если отправитель — менеджер, и он отвечает пользователю
   if (senderId === ADMIN_ID) {
-    // Ищем, какому пользователю отвечает менеджер
-    for (const [userId, managerId] of activeManagerChats.entries()) {
-      if (managerId === ADMIN_ID) {
+    console.log('Сообщение от админа, ищем кому отвечать...');
+    
+    const activeChats = Array.from(activeManagerChats.entries());
+    console.log('Активные чаты:', activeChats);
+    
+    // Проверяем, не указал ли админ ID пользователя в начале сообщения
+    const match = text?.match(/^(\d+)\s+(.+)$/s);
+    
+    if (match) {
+      // Админ указал ID пользователя
+      const targetUserId = parseInt(match[1]);
+      const messageText = match[2];
+      
+      if (activeManagerChats.has(targetUserId)) {
         try {
-          await bot.api.sendMessageToUser(userId,
-            `💬 *Ответ от менеджера*:\n\n${text}`
+          await bot.api.sendMessageToUser(targetUserId,
+            `💬 *Ответ от менеджера*:\n\n${messageText}`,
+            { format: 'markdown' }
           );
+          await bot.api.sendMessageToUser(ADMIN_ID, `✅ Ответ отправлен пользователю ${targetUserId}`);
+          console.log(`Ответ отправлен пользователю ${targetUserId}`);
         } catch (error) {
           console.error('Ошибка отправки пользователю:', error);
         }
-        return;
+      } else {
+        await bot.api.sendMessageToUser(ADMIN_ID, `❌ Пользователь ${targetUserId} не в активном чате`);
       }
+      return;
+    }
+    
+    // Если активных чатов один — отправляем ему
+    if (activeChats.length === 1) {
+      const [userId, managerId] = activeChats[0];
+      console.log(`Отправляем ответ пользователю ${userId}`);
+      
+      try {
+        await bot.api.sendMessageToUser(userId,
+          `💬 *Ответ от менеджера*:\n\n${text}`,
+          { format: 'markdown' }
+        );
+        console.log('Ответ отправлен пользователю успешно');
+      } catch (error) {
+        console.error('Ошибка отправки пользователю:', error);
+      }
+    } else if (activeChats.length > 1) {
+      // Если несколько чатов, просим указать ID
+      await bot.api.sendMessageToUser(ADMIN_ID,
+        `⚠️ У вас ${activeChats.length} активных чатов.\n` +
+        `Активные пользователи: ${activeChats.map(([id]) => id).join(', ')}\n\n` +
+        `Чтобы ответить конкретному пользователю, начните сообщение с ID:\n` +
+        `Например: "12345678 Ваш ответ"`
+      );
+    } else {
+      console.log('Нет активных чатов для ответа');
     }
   }
 });
