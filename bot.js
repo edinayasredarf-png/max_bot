@@ -681,3 +681,17 @@ bot.catch((error) => {
 console.log('Запуск бота...');
 bot.start();
 console.log('Бот успешно запущен!');
+
+// Фейковый HTTP-сервер для Render (чтобы он видел открытый порт)
+// Бот работает через Long Polling, этот сервер ничего не делает
+import http from 'http';
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Bot is running');
+});
+
+server.listen(PORT, () => {
+  console.log(`Health check server running on port ${PORT}`);
+});
