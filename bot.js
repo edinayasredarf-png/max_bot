@@ -363,7 +363,7 @@ async function sendMainMenu(ctx) {
       {
         type: 'link',
         text: '🔐 Войти в сервис',
-        url: 'https://единаясреда.рф/login'
+        url: 'https://edinayasreda.ru'
       }
     ],
     [
@@ -375,9 +375,9 @@ async function sendMainMenu(ctx) {
     ],
     [
       {
-        type: 'callback',
+        type: 'link',
         text: '📋 Заказать услуги',
-        payload: 'order_services'
+        url: 'https://единаясреда.рф/services'
       }
     ]
   ];
